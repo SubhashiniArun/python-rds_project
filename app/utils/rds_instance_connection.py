@@ -1,7 +1,7 @@
 from sqlalchemy import create_engine
 import os
 from dotenv import load_dotenv
-import boto3
+
 
 load_dotenv()
 
@@ -12,8 +12,9 @@ rds_endpoint = os.getenv('RDS_ENDPOINT')
 
 def create_rds_connection():
     engine = create_engine(f"mysql+pymysql://{rds_username}:{rds_password}@{rds_endpoint}:3306/{rds_database}")
-    conn = engine.connect()
-    return conn
+    # conn = engine.connect()
+    
+    return engine
 
 
 
