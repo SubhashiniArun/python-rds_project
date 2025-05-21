@@ -1,4 +1,5 @@
 from marshmallow_sqlalchemy import SQLAlchemySchema, auto_field
+from marshmallow import Schema, fields
 from .models import User, Post, Role
 
 class UserSchema(SQLAlchemySchema):
@@ -31,3 +32,8 @@ class RoleSchema(SQLAlchemySchema):
     id = auto_field()
     name = auto_field()
     users = auto_field()
+
+
+class UserPostCountSchema(Schema):
+    name = fields.String()
+    post_count = fields.Integer()
