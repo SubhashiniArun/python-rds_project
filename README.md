@@ -37,6 +37,8 @@
 * Master DB for writes
 * Slave DB for reads
 * Writes to Master DB gets asynchronously replicated in the Slave DB
+* Note: Since writes to master gets aynchronously replicated in Slave DB there is a slight delay. So make to read to read from the master DB immediately after the write
+
 
 
 
