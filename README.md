@@ -25,20 +25,21 @@
 * On `/login`, user will be redirected to google authorization page
 * On successful authorization, securely store the access token, refresh token in the DB 
     * encrypt the token['access_token] & token['refresh_token] using the #Fernet(secret_key)#
-    * user will be redirected `/profile` page (decorated with @login_required) upon unsuccessful authorization user redirected to `/login` page (google signin)
+    * user will be redirected to `/profile` page (decorated with @login_required) upon unsuccessful authorization user redirected to `/login` page (google signin)
     * set `login_user(user)` where user is the user queried from DB
     * set `session['user']` to store user name and email
 * On 401 error accessing /profile, call `google.refresh_token(url="https://oauth2.googleapis.com/token", refresh_token=<<decrypted_stored_refresh_token>>)` to get new access token and refresh token
     * persist the new access token and refresh token in the DB
 
 
-## Master Slave Archirecture
+## Master Slave Archirecture - RDS
 * Create a read replica for the primary DB in AWS RDS
 * Master DB for writes
-* Slave DB for reads
+* Slave DB for reads (read replica)
 * Writes to Master DB gets asynchronously replicated in the Slave DB
 * Note: Since writes to master gets aynchronously replicated in Slave DB there is a slight delay. So make sure to read from the master DB immediately after the write
 
 
-
+## Redis Cache
+* Add Redis Cache to reduce the workload on Read Replica
 

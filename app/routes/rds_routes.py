@@ -14,8 +14,9 @@ load_dotenv()
 
 from ..utils.rds_instance_connection import create_master_rds_connection, create_slave_rds_connection
 from ..utils.encryption import encrypt_token, decrypt_token
+from ..utils.cache import get_or_cache
 from ..models import User, Post, Role, db
-from ..oauth import oauth
+from ..extensions import oauth, cache
 from ..marshmallow import UserSchema, PostSchema, UserPostCountSchema
 
 api_blueprint = Blueprint('api', __name__)
@@ -91,6 +92,8 @@ def authorize():
             db_session.commit()
 
             login_user(user)
+
+            cache.delete(f"profile:{user.id}") # Cache invalidation
         session['user'] = {"name": user.name, "email": user.email}
     return redirect('profile')
 
@@ -107,6 +110,21 @@ def get_profile():
         google = OAuth2Session(token=token)
         response = google.get('https://www.googleapis.com/oauth2/v2/userinfo')
         response.raise_for_status()
+
+        # Caching (Get or Cache)
+        user_id = current_user.id
+
+        def fetch_profile():
+            with SlaveSession() as session:
+                user = session.query(User).filter_by(id=user_id).first()
+                return {
+                    "id": user.id,
+                    "email": user.email,
+                    "roles": [r.name for r in user.roles]
+                }
+            
+        profile_data = get_or_cache(f"profile:{user_id}", fetch_profile, 500)
+        return jsonify(profile_data)
 
     except HTTPError as e:
         if e.response.status_code == 401:

@@ -9,6 +9,9 @@ class Config:
     GOOGLE_CLIENT_ID = os.getenv('GOOGLE_CLIENT_ID')
     GOOGLE_CLIENT_SECRET = os.getenv('GOOGLE_CLIENT_SECRET')
 
+    CACHE_TYPE = "RedisCache"
+    CACHE_REDIS_URL = "redis://localhost:6379/0"
+
 class DevelopmentConfig(Config):
     SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URI', "mysql+pymysql://root:checkmysql@localhost:3306/practice")
 

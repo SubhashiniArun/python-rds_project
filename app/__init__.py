@@ -4,8 +4,7 @@ from flask_migrate import Migrate
 
 from .config import get_config
 from .models import db
-from .extensions import login_manager
-from .oauth import oauth
+from .extensions import login_manager, cache, oauth
 from .routes.rds_routes import api_blueprint
 
 
@@ -17,20 +16,24 @@ def create_app(config_name="development"):
     # Load configuration from the Config class
     app.config.from_object(get_config(config_name))
 
+    # Initialize Extensions (Login Manager, Oauth, Cache, DB)
+
     # Initialize login manager
-    
     login_manager.init_app(app)
     login_manager.login_view = 'api.login'
 
     # initialize oauth for app
     oauth.init_app(app)
 
-    # Setting up logging
-    setup_logging(app)
+    # initialize Cache
+    cache.init_app(app)
 
-    # Initialize extensions
+    # Initialize DB
     db.init_app(app)
     migrate = Migrate(app, db)
+
+    # Setting up logging
+    setup_logging(app)
 
     # Register the blueprints (routes)
     app.register_blueprint(api_blueprint, url_prefix='/api')
