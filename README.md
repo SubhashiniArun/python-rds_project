@@ -32,4 +32,11 @@
     * persist the new access token and refresh token in the DB
 
 
+## Master Slave Archirecture
+* Create a read replica for the primary DB in AWS RDS
+* Master DB for writes
+* Slave DB for reads
+* Writes to Master DB gets asynchronously replicated in the Slave DB
+
+
 

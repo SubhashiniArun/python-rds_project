@@ -4,7 +4,7 @@ from authlib.integrations.requests_client import OAuth2Session
 from requests.exceptions import HTTPError
 import base64
 
-from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy.orm import sessionmaker
 from sqlalchemy import select, func
 import json
 import os
@@ -12,7 +12,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-from ..utils.rds_instance_connection import create_rds_connection
+from ..utils.rds_instance_connection import create_master_rds_connection, create_slave_rds_connection
 from ..utils.encryption import encrypt_token, decrypt_token
 from ..models import User, Post, Role, db
 from ..oauth import oauth
@@ -20,7 +20,8 @@ from ..marshmallow import UserSchema, PostSchema, UserPostCountSchema
 
 api_blueprint = Blueprint('api', __name__)
 
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=create_rds_connection())
+MasterSession = sessionmaker(autocommit=False, autoflush=False, bind=create_master_rds_connection())
+SlaveSession = sessionmaker(autocommit=False, autoflush=False, bind=create_slave_rds_connection())
 
 google = oauth.register(
     name="google",
@@ -74,7 +75,7 @@ def authorize():
     user_info = resp.json()
 
     # stmt = select(User).filter_by(User.email == user_info['email']).first()
-    with SessionLocal() as db_session:
+    with MasterSession() as db_session:
         # result = session.execute(stmt).mappings.all()
         user = db_session.query(User).filter_by(email = user_info['email']).first()
         if not user:
@@ -127,8 +128,9 @@ def get_profile():
 
 @api_blueprint.route("/test_rds_connection", methods=['GET'])
 def test_rds_connection():
-    create_rds_connection()
-    return jsonify(message="RDS Connection!")
+    create_master_rds_connection()
+    create_slave_rds_connection()
+    return jsonify(message="RDS Connection Established!")
 
 
 @api_blueprint.route("/users", methods=['GET'])
@@ -147,7 +149,7 @@ def get_users():
         select(User.name, stmt3.c.post_count).select_from(User.__table__.join(stmt3, User.id == stmt3.c.user_id))
     )
     
-    with SessionLocal() as session:
+    with SlaveSession() as session:
         user = session.query(User).filter_by(email = "subhashini258@gmail.com").first()
         result = session.execute(stmt).mappings().all()
         user_schema = UserSchema(many = True)
@@ -157,9 +159,9 @@ def get_users():
         user_post_count_schema = UserPostCountSchema(many=True)
         result3 = session.execute(stmt4).mappings().all()
         user_post_count_json = user_post_count_schema.dump(result3)
-        
+
     """ Queries using db.query() """
-    # db = SessionLocal()
+    # db = SlaveSession()
     # # get all user data
     # user_data = db.query(User).all()
 
@@ -182,7 +184,7 @@ def get_users():
 @api_blueprint.route("/posts", methods=['GET'])
 def get_posts():
     try:
-        # db = SessionLocal()
+        # db = SlaveSession()
 
         # # get all post data
         # # post_data = db.query(Post).all()
